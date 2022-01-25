@@ -50,7 +50,7 @@ def main():
     trainer.training(
                         model = CLS_model, 
                         device = DEVICE,
-                        epochs = 4,
+                        epochs = 6,
                         train_dl = train_dl,
                         valid_dl = valid_dl,
                         criterion = nn.BCELoss(),

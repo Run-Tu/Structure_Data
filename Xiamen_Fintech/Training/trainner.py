@@ -1,13 +1,15 @@
+import os
 import time
 import torch
 import numpy as np
-from utils.plotting_utils import (
-                                    plotting_loss,
-                                    plotting_f2_score,
-                                    calculate_F2_score
-                                   )
+from utils.plotting_utils import calculate_F2_score
+from torch.utils.tensorboard import SummaryWriter
 
 TRAIN_TIME = time.strftime("%Y-%m-%d", time.localtime())
+TENSORBOARD_PATH = f'output/loss/tensorboard/{TRAIN_TIME}/'
+if not os.path.exists(TENSORBOARD_PATH):
+    os.makedirs(TENSORBOARD_PATH)
+writer = SummaryWriter(TENSORBOARD_PATH)
 
 
 class Trainner():
@@ -46,12 +48,7 @@ class Trainner():
         """
             zip all id dataloader
         """
-        # plotting loss
-        training_losses = []
-        validation_losses = []
-        # plotting f2_score
-        training_f2_score = []
-        validation_f2_score = []
+        # save model according to min_validation_loss
         min_validation_loss = np.inf
 
         # 模型中有BN层(Batch Normalization)和Dropout,需要在训练时添加model.train()
@@ -89,8 +86,8 @@ class Trainner():
                     # Calculate Training f2_score
                     f2_score = calculate_F2_score(torch.squeeze(output), y_batch)
                     running_training_f2_score += f2_score
-            training_losses.append(running_training_loss / len(train_dl))
-            training_f2_score.append(running_training_f2_score / len(train_dl))
+            writer.add_scalar('training loss', running_training_loss / len(train_dl), epoch)
+            writer.add_scalar('training f2 score', running_training_f2_score / len(train_dl), epoch)
 
             if epoch % validate_every == 0:
                 print("Its time to validation......")
@@ -119,8 +116,9 @@ class Trainner():
                         # Calculate validation f2_score
                         f2_score = calculate_F2_score(torch.squeeze(output), y_batch)
                         running_validation_f2_score += f2_score
-            validation_losses.append(running_validation_loss / len(valid_dl))
-            validation_f2_score.append(running_validation_f2_score / len(valid_dl))
+            # Visualization
+            writer.add_scalar('validation loss', running_validation_loss / len(valid_dl), epoch)
+            writer.add_scalar('validation f2 score', running_validation_f2_score / len(valid_dl), epoch)
 
             is_best = running_validation_loss / len(list(valid_dl)) < min_validation_loss
 
@@ -130,13 +128,6 @@ class Trainner():
                                      epoch+1, 
                                      min_validation_loss, 
                                      model.state_dict(),
-                                     optimizer.state_dict()  
+                                     optimizer.state_dict() 
                                     )  
-            
-        # Visualize loss & f2_score
-        print("Visualize loss.....")
-        plotting_loss(training_losses)
-        plotting_loss(validation_losses)
-        print("Visulize f2_score.....")
-        plotting_f2_score(TRAIN_TIME, training_f2_score)
-        plotting_f2_score(TRAIN_TIME, validation_f2_score)
+
