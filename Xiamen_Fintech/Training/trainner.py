@@ -59,12 +59,11 @@ class Trainner():
             running_training_loss = 0.0
             running_training_f2_score = 0.0
             # Training
-            for id_batch, core_cust_id_batch, prod_code_batch, (dense_batch, y_batch) in train_dl:
+            for core_cust_id_batch, prod_code_batch, (dense_batch, y_batch) in train_dl:
                     # Convert to Tensors
                     """
                         embedding层的输入要是long或int型不能是float
                     """
-                    id_batch = id_batch.long().to(device)
                     core_cust_id_batch = core_cust_id_batch.long().to(device)
                     prod_code_batch = prod_code_batch.long().to(device)
                     dense_batch = dense_batch.float().to(device)
@@ -74,7 +73,6 @@ class Trainner():
                     
                     # Make prediction
                     output = model(
-                                   id_input = id_batch,
                                    core_cust_id_input = core_cust_id_batch,
                                    prod_code_input = prod_code_batch,
                                    dense_input = dense_batch
@@ -96,16 +94,14 @@ class Trainner():
                 running_validation_loss = 0.0
                 running_validation_f2_score = 0.0
 
-                for id_batch, core_cust_id_batch, prod_code_batch, (dense_batch, y_batch) in valid_dl:
+                for core_cust_id_batch, prod_code_batch, (dense_batch, y_batch) in valid_dl:
                         # Convert to Tensors
-                        id_batch = id_batch.long().to(device)
                         core_cust_id_batch = core_cust_id_batch.long().to(device)
                         prod_code_batch = prod_code_batch.long().to(device)
                         dense_batch = dense_batch.float().to(device)
                         y_batch = y_batch.float().to(device)
 
                         output = model(
-                                        id_input = id_batch,
                                         core_cust_id_input = core_cust_id_batch,
                                         prod_code_input = prod_code_batch,
                                         dense_input = dense_batch

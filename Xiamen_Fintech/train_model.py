@@ -1,5 +1,6 @@
 """
-    focal loss
+    1、focal loss
+    2、id这一列没用,唯一客户id和产品id做embedding即可,加入id太容易过拟合
     BUG：
     1、plotting_utils()有bug,画不出图
     2、model.load()加载模型参数维度出问题
@@ -25,22 +26,16 @@ DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
 
 
 def main():
-    train_data, valid_data, test_data, id_size, core_cust_id_size, prod_code_size = gp_csv_data(train_path='data/x_train_process.csv',
-                                                                                                test_path='data/x_test_process.csv',
-                                                                                                rows=100000)
-    id_train_dl, core_cust_id_train_dl, prod_code_train_dl, dense_train_dl = get_data_loader('train',train_data)
-    id_valid_dl, core_cust_id_valid_dl, prod_code_valid_dl, dense_valid_dl = get_data_loader('valid',valid_data)
-    train_dl = list(zip(id_train_dl, core_cust_id_train_dl, prod_code_train_dl, dense_train_dl))
-    valid_dl = list(zip(id_valid_dl, core_cust_id_valid_dl, prod_code_valid_dl, dense_valid_dl))
-
+    train_data, valid_data, test_data, core_cust_id_size, prod_code_size = gp_csv_data(train_path='data/x_train_process.csv',
+                                                                                       test_path='data/x_test_process.csv',
+                                                                                       rows=200000)
+    train_dl = get_data_loader('train',train_data)
+    valid_dl = get_data_loader('valid',valid_data)
     dense_feature = ['year','month','day','d1','d2','d3','g1','g2','g3',
                      'g4','g5','g6','g7','g8','k4','k6','k7','k8','k9']
-    
-    
     CLS_model = ClsModule(
                           dense_feature_columns = dense_feature,
                           hidden_units = [1024, 512],
-                          id_size = id_size,
                           core_cust_id_size = core_cust_id_size,
                           prod_code_size = prod_code_size
                          ).to(DEVICE)
@@ -50,7 +45,7 @@ def main():
     trainer.training(
                         model = CLS_model, 
                         device = DEVICE,
-                        epochs = 6,
+                        epochs = 8,
                         train_dl = train_dl,
                         valid_dl = valid_dl,
                         criterion = nn.BCELoss(),

@@ -1,27 +1,6 @@
 from torch.utils.data import Dataset
 
 
-class idDataSet(Dataset):
-    """
-        create id column embedding input dataset
-    """
-    def __init__(self, csv_file, feature):
-        super(idDataSet, self).__init__()
-        self.csv_file = csv_file
-        self.id_feature = feature
-        self.id_data = self.csv_file[self.id_feature].values
-    
-
-    def __len__(self):
-
-        return len(self.id_data)
-    
-
-    def __getitem__(self, idx):
-
-        return self.id_data[idx]
-
-
 class core_cust_idDataSet(Dataset):
     """
         create core_cust_id column embedding input dataset
