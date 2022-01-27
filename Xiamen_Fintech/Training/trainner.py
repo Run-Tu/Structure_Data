@@ -2,7 +2,7 @@ import os
 import time
 import torch
 import numpy as np
-from utils.plotting_utils import calculate_F2_score
+from utils.result_utils import calculate_F2_score
 from torch.utils.tensorboard import SummaryWriter
 
 TRAIN_TIME = time.strftime("%Y-%m-%d", time.localtime())

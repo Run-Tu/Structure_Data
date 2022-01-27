@@ -35,9 +35,15 @@ def gp_csv_data(train_path, test_path, return_type:str, rows=None):
     # feature enginering
     def add_feature(df):
         """
-            特征工程
+            特征工程,负采样参考：https://zhuanlan.zhihu.com/p/387378387
+            1、以理财产品为准,计算每个理财产品出现的次数
+            2、以客户为准,计算每个客户购买的次数
         """
-        pass
+        df['prod_code_counts'] = df['prod_code'].map(df['prod_code'].value_counts())
+        df['core_cust_id_counts'] = df['core_cust_id'].map(df['core_cust_id'].value_counts())
+
+        return df
+    data = add_feature(data)
     # split train and test data
     train = data.iloc[:-567362]
     train_data = train.iloc[ : int(len(train)*0.7)]
@@ -54,43 +60,48 @@ def gp_csv_data(train_path, test_path, return_type:str, rows=None):
         return test_data, core_cust_id_size, prod_code_size
 
 
-def get_data_loader(data_type:str, csv_data):
-    """
-        可设置两组dataloader_params参数，一组train，一组test
-        两个return
-    """
+def get_data_loader(data_type:str, csv_data, dense_feature):
     assert data_type in ['train','valid','test']
     core_cust_id_feature = 'core_cust_id'
     prod_code_feature = 'prod_code'
-    dense_feature = ['year','month','day','d1','d2','d3','g1','g2','g3',
-                     'g4','g5','g6','g7','g8','k4','k6','k7','k8','k9']
+    dense_feature = dense_feature
     # DataLoader的shuffle
-    dataloader_params = {
+    train_params = {
+                        'batch_size':1024,
+                        'shuffle':True,
+                        'drop_last':True,
+                        'num_workers':2
+                        }
+    test_params =  {
                         'batch_size':1024,
                         'shuffle':False,
-                        'drop_last':True,
-                        'num_workers':0
+                        'drop_last':False,
+                        'num_workers':2
                         }
+        # get common core_cust_id dataset and prod_code dataset
+    core_cust_id_dataset = core_cust_idDataSet(csv_data, core_cust_id_feature)
+    prod_code_dataset = prod_codeDataSet(csv_data, prod_code_feature) 
+    
     if data_type in ['train','valid']:
+        params = train_params
         # get dense part dataset
         target = 'y'
         dense_dataset = TensorDataset(
                                     torch.tensor(csv_data[dense_feature].values).float(), 
                                     torch.tensor(csv_data[target].values).float()
-                                    )       
+                                    )  
+        dataset = list(zip(core_cust_id_dataset, prod_code_dataset, dense_dataset)) # 这里不变成list无法传入dataloader
+        train_dataloader = DataLoader(dataset, **params)
+
+        return train_dataloader
+
     else:
+        params = test_params
         # get dense part dataset
         dense_dataset = TensorDataset(
                                     torch.tensor(csv_data[dense_feature].values).float()
                                     )      
-        print("dense_dataset is", dense_dataset)
-    # get common core_cust_id dataset and prod_code dataset
-    core_cust_id_dataset = core_cust_idDataSet(csv_data, core_cust_id_feature)
-    prod_code_dataset = prod_codeDataSet(csv_data, prod_code_feature) 
-    # get zip dataset
-    dataset = list(zip(core_cust_id_dataset, prod_code_dataset, dense_dataset)) # 这里不变成list无法传入dataloader
-    # get torch dataloader
-    dataloader = DataLoader(dataset, **dataloader_params)
+        dataset = list(zip(core_cust_id_dataset, prod_code_dataset, dense_dataset)) # 这里不变成list无法传入dataloader
+        test_dataloader = DataLoader(dataset, **params)
+        return test_dataloader
 
-    return dataloader
-    

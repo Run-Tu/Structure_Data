@@ -3,7 +3,6 @@ import time
 import torch
 import pandas as pd
 warnings.filterwarnings("ignore")
-import torch
 from DataSet.data_process import (
                                    gp_csv_data,
                                    get_data_loader
@@ -24,9 +23,9 @@ def predict(device, TRAIN_TIME):
     test_data, core_cust_id_size, prod_code_size = gp_csv_data(train_path='data/x_train_process.csv',
                                                                test_path='data/x_test_process.csv',
                                                                return_type='test')
-    test_dl = get_data_loader('test', test_data)
-    dense_feature = ['year','month','day','d1','d2','d3','g1','g2','g3',
-                     'g4','g5','g6','g7','g8','k4','k6','k7','k8','k9']
+    dense_feature = ['year','month','day','d1','d2','d3','g8','k4','k6','k7','k8','k9']
+    test_dl = get_data_loader('test', test_data, dense_feature)
+    
 
     checkpoint = torch.load(f'output/checkpoints/{TRAIN_TIME}_model_state.pt')
     CLS_model = ClsModule(
@@ -43,11 +42,9 @@ def predict(device, TRAIN_TIME):
     for core_cust_id_batch, prod_code_batch, dense_batch in test_dl:
             # transfer data type
             core_cust_id_batch = core_cust_id_batch.long().to(device)
-            print("core_cust_id_batch is", core_cust_id_batch)
             prod_code_batch = prod_code_batch.long().to(device)
-            print("prod_code_batch is", prod_code_batch)
-            print("dense_batch is", dense_batch)
-            dense_batch = dense_batch.float().to(device)
+            print(len(dense_batch))
+            dense_batch = dense_batch[0].float().to(device)
             
             # calculate y_pred
             output = CLS_model(
@@ -55,19 +52,20 @@ def predict(device, TRAIN_TIME):
                                 prod_code_input = prod_code_batch,
                                 dense_input = dense_batch
                               )
-            result.extend(torch.squeeze(output))
+            result.extend(torch.squeeze(output).numpy.to(device))
 
 
     return result
 
 
-def get_submission(result):
+def get_submission(result, train_time):
     test = pd.read_csv('data/x_test_process.csv', encoding='UTF-8')
     test['y'] = result
     result = test[['id','y']]
     # 保存结果小数点后6位
-    result.to_csv('data/result.csv', encoding='UTF-8', index=False, float_format='%.6f')
+    result.to_csv(f'data/result_{train_time}.csv', encoding='UTF-8', index=False, float_format='%.6f')
 
 
 if __name__ == '__main__':
-    predict(DEVICE, TRAIN_TIME)
+    result = predict(DEVICE, TRAIN_TIME)
+    get_submission(result, TRAIN_TIME)
