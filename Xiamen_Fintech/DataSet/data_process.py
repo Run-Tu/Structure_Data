@@ -61,6 +61,10 @@ def gp_csv_data(train_path, test_path, return_type:str, rows=None):
 
 
 def get_data_loader(data_type:str, csv_data, dense_feature):
+    """
+        pytorch样本比例不均衡采用WeightedRandomSampler进行采样
+        https://blog.csdn.net/Andrew_SJ/article/details/110875468
+    """
     assert data_type in ['train','valid','test']
     core_cust_id_feature = 'core_cust_id'
     prod_code_feature = 'prod_code'
@@ -68,7 +72,7 @@ def get_data_loader(data_type:str, csv_data, dense_feature):
     # DataLoader的shuffle
     train_params = {
                         'batch_size':1024,
-                        'shuffle':True,
+                        'shuffle':False,
                         'drop_last':True,
                         'num_workers':2
                         }
@@ -78,7 +82,7 @@ def get_data_loader(data_type:str, csv_data, dense_feature):
                         'drop_last':False,
                         'num_workers':2
                         }
-        # get common core_cust_id dataset and prod_code dataset
+    # get common core_cust_id dataset and prod_code dataset
     core_cust_id_dataset = core_cust_idDataSet(csv_data, core_cust_id_feature)
     prod_code_dataset = prod_codeDataSet(csv_data, prod_code_feature) 
     

@@ -2,9 +2,11 @@
     1、focal loss
     2、所有参数可以加到config的args字典中(参考ccks)
     3、Negative Sampling
-    BUG：
-    2、model.load()加载模型参数维度出问题
-    3、模型效果太差打印batch的前几个看看数据是否对齐
+    # 2022/2/7
+    先提交一版修改过的代码，看一下分数效果
+    改进思路：
+        1、通过欠采样让正负样本平衡，训练一次大概在5W样本左右
+        2、可以通过分组欠采样，一组数据训练一个模型，训练多个模型然后ensemble
 """
 import warnings
 warnings.filterwarnings("ignore")
@@ -27,9 +29,9 @@ DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
 def main():
     train_data, valid_data, core_cust_id_size, prod_code_size = gp_csv_data(train_path='data/x_train_process.csv',
                                                                             test_path='data/x_test_process.csv',
-                                                                            return_type='train'
+                                                                            return_type='train',
                                                                             )
-    dense_feature = ['year','month','day','d1','d2','d3','g8','k4','k6','k7','k8','k9']
+    dense_feature = ['year','month','day','d1','d2','d3','g8','k4','k6','k7','k8','k9','prod_code_counts','core_cust_id_counts']
     train_dl = get_data_loader('train',train_data, dense_feature)
     valid_dl = get_data_loader('valid',valid_data, dense_feature)
     CLS_model = ClsModule(
@@ -40,7 +42,7 @@ def main():
                          ).to(DEVICE)
     trainer = Trainner()
     # pytorch中一个模型(torch.nn.module)的可学习参数(权重和偏置值)是包含在模型参数(model.parameters())中的
-    optimizer = optim.AdamW(CLS_model.parameters(), lr=0.001, weight_decay=0.01)
+    optimizer = optim.AdamW(CLS_model.parameters(), lr=5e-4, weight_decay=0.01)
     trainer.training(
                         model = CLS_model, 
                         device = DEVICE,

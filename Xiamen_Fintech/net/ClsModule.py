@@ -1,27 +1,9 @@
 """
     将不同代码下的日志保存到不同的文件中是否需要Handler？怎么处理？
 """
-import os
 import math
-import datetime
-import logging
 import torch
 import torch.nn as nn
-
-
-# # 日志模块
-# TODAY = datetime.date.today()
-# LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-# DATE_FORMAT = "%Y/%m/%d %H:%M:%S %p"
-# LOG_DIR = f'output/log/'
-# if not os.path.exists(LOG_DIR):
-#     os.makedirs(LOG_DIR)
-# logging.basicConfig(
-#                     filename=f"./output/log/{TODAY}.log", 
-#                     level=logging.DEBUG, 
-#                     format=LOG_FORMAT, 
-#                     datefmt=DATE_FORMAT
-#                    )
 
 
 class ClsModule(nn.Module):
@@ -36,6 +18,7 @@ class ClsModule(nn.Module):
                  dropout=False , dropout_rate=0.2):
         """
             core_cust_id,prod_code默认全量数据大小
+            训练时会自动计算core_cust_id_size和prod_code_size
             Args: 
                 dense_feature(list) -> dense features list 
                 core_cust_id_size -> numbers of core_cust_id_vocab
@@ -83,20 +66,12 @@ class ClsModule(nn.Module):
         """
         core_cust_id_embed_output = self.embed_layer["embed_core_cust_id"](core_cust_id_input)
         prod_code_embed_output = self.embed_layer["embed_prod_code"](prod_code_input)
-        # get dnn layer input
-        # torch.cat((A,B), axis=0)
-        # logging.info("id_embed_output is ", id_embed_output)
-        # logging.info("core_cust_id_embed_output is ", core_cust_id_embed_output)
-        # logging.info("prod_code_embed_output is ", prod_code_embed_output)
-        # logging.info("dense_input is ", dense_input)
         dnn_input = torch.cat([
                                core_cust_id_embed_output,
                                prod_code_embed_output,
                                dense_input
                                ], axis=1)
-        # logging.info("dnn_input is ", dnn_input)
         dnn_output = self.dnn_network(dnn_input)
-        # logging.info("dnn_input is ", dnn_output)
         model_output = self.final_linear(dnn_output)
         model_output = torch.sigmoid(model_output)
         

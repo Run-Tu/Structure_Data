@@ -52,7 +52,7 @@ def predict(device, TRAIN_TIME):
                                 prod_code_input = prod_code_batch,
                                 dense_input = dense_batch
                               )
-            result.extend(torch.squeeze(output).numpy.to(device))
+            result.extend(torch.squeeze(output).detach().numpy())
 
 
     return result

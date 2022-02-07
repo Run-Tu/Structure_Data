@@ -1,17 +1,8 @@
+import os
 import torch
-from sklearn.metrics import precision_score, recall_score
+import datetime
+import logging
 
-
-def calculate_F2_score(y_pred, y_true):
-    """
-        可以定义成utils
-    """
-    y_pred = [1 if i>=0.5 else 0 for i in y_pred]
-    precision = precision_score(y_pred, y_true)
-    recall = recall_score(y_pred, y_true)
-    F2_score = 5 * precision * recall / (4 * precision + recall)
-
-    return F2_score
 
 class BCEFocalLoss(torch.nn.Module):
     """
@@ -29,3 +20,21 @@ class BCEFocalLoss(torch.nn.Module):
         loss = - self.alpha * (1 - predict) ** self.gamma * target * torch.log(predict) - (1 - self.alpha) * predict ** self.gamma * (1 - target) * torch.log(1 - predict)
         
         return torch.mean(loss)
+
+
+def get_logging():
+    # 日志模块
+    TODAY = datetime.date.today()
+    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+    DATE_FORMAT = "%Y/%m/%d %H:%M:%S %p"
+    LOG_DIR = f'output/log/'
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+    logging.basicConfig(
+                        filename=f"./output/log/{TODAY}.log", 
+                        level=logging.DEBUG, 
+                        format=LOG_FORMAT, 
+                        datefmt=DATE_FORMAT
+                    )
+    
+    return logging
