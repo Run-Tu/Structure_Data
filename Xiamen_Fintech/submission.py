@@ -9,7 +9,7 @@ from DataSet.data_process import (
                                  )
 from net.ClsModule import ClsModule
 
-# DEVICE
+# DEVICE&TIME
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
 TRAIN_TIME = time.strftime("%Y-%m-%d", time.localtime())
@@ -18,12 +18,12 @@ TRAIN_TIME = time.strftime("%Y-%m-%d", time.localtime())
 def predict(device, TRAIN_TIME):
     """
         model的id_size(embedding),core_cust_id_size(embedding),prod_code_size(embedding)
-        三个embedding_input的维度需要和train中的维度对齐,否则会因为test和train的数据分布维度差异导致无法预测
+        三个embedding_input的维度需要和训练时的维度对齐,否则会因为test和train的数据分布维度差异导致无法预测
     """
     test_data, core_cust_id_size, prod_code_size = gp_csv_data(train_path='data/x_train_process.csv',
-                                                               test_path='data/x_test_process.csv',
+                                                               test_path='data/x_test_B_process.csv',
                                                                return_type='test')
-    dense_feature = ['year','month','day','d1','d2','d3','g8','k4','k6','k7','k8','k9']
+    dense_feature = ['year','month','day','prod_code_counts','core_cust_id_counts']
     test_dl = get_data_loader('test', test_data, dense_feature)
     
 
@@ -59,7 +59,7 @@ def predict(device, TRAIN_TIME):
 
 
 def get_submission(result, train_time):
-    test = pd.read_csv('data/x_test_process.csv', encoding='UTF-8')
+    test = pd.read_csv('data/x_test_B_process.csv', encoding='UTF-8')
     test['y'] = result
     result = test[['id','y']]
     # 保存结果小数点后6位

@@ -10,9 +10,7 @@ from torch.utils.data.dataloader import DataLoader
 
 def gp_csv_data(train_path, test_path, return_type:str, rows=None):
     """
-        Get and process csv data
-        get train_data, valid_data, test_data
-        get id, core_cust_id, prod_code embed size
+        数据处理逻辑有问题，处理test数据时不应该再加载train数据了
     """
     assert return_type in ['train','test']
     train_data = pd.read_csv(train_path, encoding='utf-8', nrows=rows)
@@ -45,10 +43,10 @@ def gp_csv_data(train_path, test_path, return_type:str, rows=None):
         return df
     data = add_feature(data)
     # split train and test data
-    train = data.iloc[:-567362]
+    train = data.iloc[:-587085]
     train_data = train.iloc[ : int(len(train)*0.7)]
     valid_data = train.iloc[int(len(train)*0.7) : ]
-    test_data = data.iloc[-567362:].drop('y', axis=1)
+    test_data = data.iloc[-587085:].drop('y', axis=1)
     # calculate embedding matrix dim
     core_cust_id_size = len(core_cust_id_2_num)
     prod_code_size = len(prod_code_2_num)  
@@ -72,7 +70,7 @@ def get_data_loader(data_type:str, csv_data, dense_feature):
     # DataLoader的shuffle
     train_params = {
                         'batch_size':1024,
-                        'shuffle':False,
+                        'shuffle':True,
                         'drop_last':True,
                         'num_workers':2
                         }
@@ -87,7 +85,6 @@ def get_data_loader(data_type:str, csv_data, dense_feature):
     prod_code_dataset = prod_codeDataSet(csv_data, prod_code_feature) 
     
     if data_type in ['train','valid']:
-        params = train_params
         # get dense part dataset
         target = 'y'
         dense_dataset = TensorDataset(
@@ -95,17 +92,16 @@ def get_data_loader(data_type:str, csv_data, dense_feature):
                                     torch.tensor(csv_data[target].values).float()
                                     )  
         dataset = list(zip(core_cust_id_dataset, prod_code_dataset, dense_dataset)) # 这里不变成list无法传入dataloader
-        train_dataloader = DataLoader(dataset, **params)
+        train_dataloader = DataLoader(dataset, **train_params)
 
         return train_dataloader
 
     else:
-        params = test_params
         # get dense part dataset
         dense_dataset = TensorDataset(
                                     torch.tensor(csv_data[dense_feature].values).float()
                                     )      
         dataset = list(zip(core_cust_id_dataset, prod_code_dataset, dense_dataset)) # 这里不变成list无法传入dataloader
-        test_dataloader = DataLoader(dataset, **params)
+        test_dataloader = DataLoader(dataset, **test_params)
         return test_dataloader
 

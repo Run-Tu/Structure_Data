@@ -2,6 +2,7 @@
     1、focal loss
     2、所有参数可以加到config的args字典中(参考ccks)
     3、Negative Sampling
+    4、断点训练
     # 2022/2/7
     先提交一版修改过的代码，看一下分数效果
     改进思路：
@@ -27,11 +28,14 @@ DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
 
 
 def main():
+    """
+        dense_feature需要自动处理,将id_feature剔除
+    """
     train_data, valid_data, core_cust_id_size, prod_code_size = gp_csv_data(train_path='data/x_train_process.csv',
-                                                                            test_path='data/x_test_process.csv',
+                                                                            test_path='data/x_test_B_process.csv',
                                                                             return_type='train',
                                                                             )
-    dense_feature = ['year','month','day','d1','d2','d3','g8','k4','k6','k7','k8','k9','prod_code_counts','core_cust_id_counts']
+    dense_feature = ['year','month','day','prod_code_counts','core_cust_id_counts']
     train_dl = get_data_loader('train',train_data, dense_feature)
     valid_dl = get_data_loader('valid',valid_data, dense_feature)
     CLS_model = ClsModule(
@@ -46,7 +50,7 @@ def main():
     trainer.training(
                         model = CLS_model, 
                         device = DEVICE,
-                        epochs = 8,
+                        epochs = 2,
                         train_dl = train_dl,
                         valid_dl = valid_dl,
                         criterion = BCEFocalLoss(),

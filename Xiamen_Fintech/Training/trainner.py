@@ -138,8 +138,15 @@ class Trainner():
             # Visualization
             writer.add_scalar('validation loss', running_validation_loss / len(valid_dl), epoch)
             writer.add_scalar('validation f2 score', running_validation_f2_score / len(valid_dl), epoch)
+            # 强行保存
+            self.save_checkpoint(
+                                     epoch+1, 
+                                     min_validation_loss, 
+                                     model.state_dict(),
+                                     optimizer.state_dict() 
+                                    )  
 
-            is_best = running_validation_loss / len(list(valid_dl)) < min_validation_loss
+            is_best = running_validation_loss / len(list(valid_dl)) <= min_validation_loss
 
             if is_best:
                 min_validation_loss = running_validation_loss / len(valid_dl)
